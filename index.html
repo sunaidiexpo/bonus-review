@@ -403,7 +403,7 @@ function buildTable(data,type,containerId){
         <input type="text" class="approval-input ${val!==''?'changed':''}" inputmode="numeric"
           data-type="${type}" data-index="${i}" data-name="${d.name}"
           value="${val!==''?fmt(val):''}" placeholder="—"
-          oninput="onApprovalChange(this)" onfocus="this.select()"/>
+          oninput="onApprovalInput(this)" onblur="onApprovalCommit(this)" onfocus="onApprovalFocus(this)"/>
         <span class="approval-val-print" style="display:none">${val!==''?fmt(val):'—'}</span>
       </td>
       <td class="ref-cell"><span class="ref-tag">${crossDisplay}</span></td>
@@ -436,7 +436,22 @@ function buildTable(data,type,containerId){
   if(e1)e1.textContent=hasApproval?fmt(approvalTotal):'—';
 }
 
-function onApprovalChange(el){
+function onApprovalFocus(el){
+  // Show raw number for editing
+  const type=el.dataset.type;
+  const idx=parseInt(el.dataset.index);
+  const data=type==='mc'?mcData:sfeData;
+  const val=data[idx].approval;
+  el.value=val!=null?val:'';
+  el.select();
+}
+
+function onApprovalInput(el){
+  // Just clean non-numeric while typing - no rebuild
+  el.value=el.value.replace(/[^0-9]/g,'');
+}
+
+function onApprovalCommit(el){
   const raw=el.value.replace(/[^0-9]/g,'');
   const num=raw?parseInt(raw):null;
   const type=el.dataset.type;
