@@ -343,7 +343,11 @@ async function pollSheets(){
         if(draft!=null&&arr[i].draft!==draft){arr[i].draft=draft;changed=true}
       }
     });
-    if(changed){rebuildAll();showToast('🔄 تم تحديث البيانات!')}
+    if(changed){
+      // Don't rebuild if user is currently editing
+      const isEditing=document.querySelector('.approval-input[data-editing="1"]');
+      if(!isEditing){rebuildAll();showToast('🔄 تم تحديث البيانات!')}
+    }
     setSyncStatus('ok','متصل — '+new Date().toLocaleTimeString('ar-SA'));
   }catch(e){}
 }
@@ -400,7 +404,7 @@ function buildTable(data,type,containerId){
       <td class="salary-cell">${d.salary?fmt(d.salary):'—'}</td>
       <td class="${ac}">${fmt(d.draft)}</td>
       <td class="approval-cell">
-        <input type="text" class="approval-input ${val!==''?'changed':''}" inputmode="numeric"
+        <input type="tel" class="approval-input ${val!==''?'changed':''}" dir="ltr" inputmode="numeric" pattern="[0-9]*"
           data-type="${type}" data-index="${i}" data-name="${d.name}"
           value="${val!==''?fmt(val):''}" placeholder="—"
           oninput="onApprovalInput(this)" onblur="onApprovalCommit(this)" onfocus="onApprovalFocus(this)"/>
@@ -437,21 +441,29 @@ function buildTable(data,type,containerId){
 }
 
 function onApprovalFocus(el){
-  // Show raw number for editing
   const type=el.dataset.type;
   const idx=parseInt(el.dataset.index);
   const data=type==='mc'?mcData:sfeData;
   const val=data[idx].approval;
   el.value=val!=null?val:'';
   el.select();
+  el.dataset.editing='1';
 }
 
 function onApprovalInput(el){
-  // Just clean non-numeric while typing - no rebuild
-  el.value=el.value.replace(/[^0-9]/g,'');
+  // Convert Arabic/Persian numerals to English
+  el.value=el.value
+    .replace(/[٠]/g,'0').replace(/[١]/g,'1').replace(/[٢]/g,'2').replace(/[٣]/g,'3')
+    .replace(/[٤]/g,'4').replace(/[٥]/g,'5').replace(/[٦]/g,'6').replace(/[٧]/g,'7')
+    .replace(/[٨]/g,'8').replace(/[٩]/g,'9')
+    .replace(/[۰]/g,'0').replace(/[۱]/g,'1').replace(/[۲]/g,'2').replace(/[۳]/g,'3')
+    .replace(/[۴]/g,'4').replace(/[۵]/g,'5').replace(/[۶]/g,'6').replace(/[۷]/g,'7')
+    .replace(/[۸]/g,'8').replace(/[۹]/g,'9')
+    .replace(/[^0-9]/g,'');
 }
 
 function onApprovalCommit(el){
+  el.dataset.editing='0';
   const raw=el.value.replace(/[^0-9]/g,'');
   const num=raw?parseInt(raw):null;
   const type=el.dataset.type;
