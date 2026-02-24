@@ -94,6 +94,29 @@ tbody td:first-child{text-align:center;font-weight:700;color:#9ca3af;font-size:.
 .approval-signature .sig-line{border-bottom:2px solid #1a1a2e;width:200px;margin:40px auto 8px}
 .approval-signature .sig-label{font-size:.85rem;font-weight:700;color:#374151}
 .approval-signature h3{font-size:1.1rem;font-weight:800;text-align:center;margin-bottom:4px}
+.sales-btn{background:none;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-size:.85rem;padding:2px 6px;margin-right:4px;transition:all .2s}
+.sales-btn:hover{background:#fef3c7;border-color:#f59e0b}
+
+.sales-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.sales-modal.show{display:flex}
+.sales-modal-box{background:#fff;border-radius:20px;max-width:700px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:modalIn .3s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #e5e7eb}
+.modal-header h2{font-size:1.1rem;font-weight:800;margin-bottom:2px}
+.modal-header p{font-size:.85rem;color:#6b7280}
+.modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:#9ca3af;padding:4px 8px;border-radius:8px;transition:all .2s}
+.modal-close:hover{background:#f3f4f6;color:#1a1a2e}
+.modal-body{padding:20px 24px}
+.modal-summary{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.modal-stat{flex:1;min-width:100px;background:#f9fafb;border-radius:12px;padding:14px 16px;text-align:center}
+.modal-stat-label{display:block;font-size:.7rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
+.modal-stat-value{display:block;font-size:1.2rem;font-weight:800;color:#1a1a2e;margin-top:4px}
+.modal-table-wrap{overflow-x:auto;border-radius:12px;border:1px solid #e5e7eb}
+.modal-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.modal-table thead th{background:#f9fafb;padding:10px 8px;font-weight:700;color:#6b7280;text-align:center;border-bottom:2px solid #e5e7eb;white-space:nowrap}
+.modal-table tbody td{padding:10px 8px;text-align:center;border-bottom:1px solid #f0f0f0}
+@media(max-width:700px){.sales-modal-box{border-radius:16px;margin:8px}.modal-body{padding:14px}.modal-stat{min-width:80px;padding:10px 8px}.modal-stat-value{font-size:1rem}.modal-table{font-size:.7rem}}
+
 .action-bar{display:flex;gap:10px;justify-content:center;margin-top:28px;flex-wrap:wrap}
 .btn{padding:12px 28px;border:none;border-radius:12px;font-family:'Tajawal',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s;text-decoration:none}
 .btn-whatsapp{background:#25d366;color:#fff}.btn-whatsapp:hover{background:#1fb855;transform:translateY(-1px)}
@@ -176,6 +199,9 @@ tbody td:first-child{text-align:center;font-weight:700;color:#9ca3af;font-size:.
       نسخ الرابط
     </button>
   </div>
+</div>
+<div class="sales-modal" id="salesModal" onclick="if(event.target===this)closeSalesModal()">
+  <div class="sales-modal-box" id="salesModalContent"></div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -356,6 +382,135 @@ async function pollSheets(){
   }catch(e){}
 }
 
+
+// ===== SALES REPORTS =====
+const salesReports={
+  "Miram AL Zainy|MC":{
+    name:"Miram AL Zainy",show:"MC",
+    rows:[
+      {status:"New",pct:"3.0%",space:1289242,reg:191045,stands:91648,extra:4914,total:1576849,agent:28350,net:1548499},
+      {status:"Repeated",pct:"1%",space:520394,reg:36053,stands:12751,extra:1400,total:570598,agent:0,net:570598},
+      {status:"G Total",pct:"",space:1809636,reg:227098,stands:104399,extra:6314,total:2147447,agent:28350,net:2119097}
+    ]
+  },
+  "Sara Al Bishri|MC":{
+    name:"Sara Al Bishri",show:"MC",
+    rows:[
+      {status:"New",pct:"2.5%",space:287976,reg:115373,stands:67191,extra:5698,total:476239,agent:0,net:476239},
+      {status:"Repeated",pct:"1%",space:128061,reg:11625,stands:21028,extra:2790,total:163504,agent:0,net:163504},
+      {status:"G Total",pct:"",space:416037,reg:126998,stands:88219,extra:8488,total:639742,agent:0,net:639742}
+    ]
+  },
+  "Hassan Hijazi|MC":{
+    name:"Hassan Hijazi",show:"MC",
+    rows:[
+      {status:"New",pct:"2.5%",space:7290,reg:7320,stands:0,extra:0,total:14610,agent:0,net:14610},
+      {status:"Repeated",pct:"1%",space:0,reg:0,stands:0,extra:0,total:0,agent:0,net:0},
+      {status:"G Total",pct:"",space:7290,reg:7320,stands:0,extra:0,total:14610,agent:0,net:14610}
+    ]
+  },
+  "Norhan Hijazi|SFE":{
+    name:"Norhan Hijazi",show:"SFE",
+    rows:[
+      {status:"New",pct:"3.0%",space:679418,reg:115683,stands:140231,extra:102810,total:1038142,agent:131963,net:906179},
+      {status:"Repeated",pct:"1%",space:194333,reg:48488,stands:55485,extra:18293,total:316598,agent:56430,net:260168},
+      {status:"G Total",pct:"",space:873750,reg:164171,stands:195716,extra:121103,total:1354739,agent:188393,net:1166347}
+    ]
+  },
+  "Hassan Hijazi|SFE":{
+    name:"Hassan Hijazi",show:"SFE",
+    rows:[
+      {status:"New",pct:"2.5%",space:361748,reg:66084,stands:105375,extra:11370,total:544576,agent:26393,net:518184},
+      {status:"Repeated",pct:"1%",space:23897,reg:29023,stands:50625,extra:1650,total:105195,agent:0,net:105195},
+      {status:"G Total",pct:"",space:385645,reg:95106,stands:156000,extra:13020,total:649771,agent:26393,net:623379}
+    ]
+  },
+  "Sara Al harbi|SFE":{
+    name:"Sara Al harbi",show:"SFE",
+    rows:[
+      {status:"New",pct:"2.5%",space:116393,reg:18600,stands:13500,extra:4500,total:152993,agent:0,net:152993},
+      {status:"Repeated",pct:"1%",space:262170,reg:26550,stands:76750,extra:18300,total:383770,agent:0,net:383770},
+      {status:"G Total",pct:"",space:378563,reg:45150,stands:90250,extra:22800,total:536763,agent:0,net:536763}
+    ]
+  },
+  "Abdulrahman|SFE":{
+    name:"Abdulrahman",show:"SFE",
+    rows:[
+      {status:"New",pct:"2.5%",space:145699,reg:22425,stands:20250,extra:9300,total:197674,agent:118530,net:79144},
+      {status:"Repeated",pct:"1%",space:130410,reg:21638,stands:27000,extra:10800,total:189848,agent:43470,net:146378},
+      {status:"G Total",pct:"",space:276109,reg:44063,stands:47250,extra:20100,total:387521,agent:162000,net:225521}
+    ]
+  }
+};
+
+function hasSalesReport(name,type){
+  return salesReports[name+"|"+type.toUpperCase()]!=null;
+}
+
+function openSalesReport(name,type){
+  const key=name+"|"+type.toUpperCase();
+  const report=salesReports[key];
+  if(!report)return;
+  const f=n=>Number(n).toLocaleString('en-US');
+  const showLabel=type.toUpperCase()==='MC'?'ميزون':'فرانشيز';
+  
+  let tableRows='';
+  report.rows.forEach(r=>{
+    const isTotal=r.status==='G Total';
+    const cls=isTotal?'style="font-weight:900;background:#fef3c7;border-top:2px solid #d97706"':'';
+    tableRows+=`<tr \${cls}>
+      <td>\${r.status}</td><td>\${r.pct}</td>
+      <td>\${f(r.space)}</td><td>\${f(r.reg)}</td><td>\${f(r.stands)}</td>
+      <td>\${f(r.extra)}</td><td style="font-weight:700">\${f(r.total)}</td>
+      <td>\${f(r.agent)}</td><td style="font-weight:800;color:#16a34a">\${f(r.net)}</td>
+    </tr>`;
+  });
+
+  const modal=document.getElementById('salesModal');
+  const content=document.getElementById('salesModalContent');
+  content.innerHTML=`
+    <div class="modal-header">
+      <div>
+        <h2>📊 تقرير المبيعات</h2>
+        <p>\${report.name} — \${showLabel}</p>
+      </div>
+      <button class="modal-close" onclick="closeSalesModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-summary">
+        <div class="modal-stat">
+          <span class="modal-stat-label">إجمالي المبيعات</span>
+          <span class="modal-stat-value">\${f(report.rows[2].total)}</span>
+        </div>
+        <div class="modal-stat">
+          <span class="modal-stat-label">مبيعات الـ Agent</span>
+          <span class="modal-stat-value" style="color:#dc2626">\${f(report.rows[2].agent)}</span>
+        </div>
+        <div class="modal-stat">
+          <span class="modal-stat-label">صافي المبيعات</span>
+          <span class="modal-stat-value" style="color:#16a34a">\${f(report.rows[2].net)}</span>
+        </div>
+      </div>
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead><tr>
+            <th>الحالة</th><th>%</th><th>Space</th><th>Reg+Util</th>
+            <th>Stands</th><th>Extra</th><th>Total</th><th>Agent</th><th>NET</th>
+          </tr></thead>
+          <tbody>\${tableRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  modal.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function closeSalesModal(){
+  document.getElementById('salesModal').classList.remove('show');
+  document.body.style.overflow='';
+}
+
 // ===== UI =====
 function fmt(n){return n!=null?Number(n).toLocaleString('en-US'):'—'}
 
@@ -404,7 +559,7 @@ function buildTable(data,type,containerId){
     }
 
     h+=`<tr>
-      <td>${i+1}</td><td>${d.name}</td>
+      <td>${i+1}</td><td>${d.name} ${hasSalesReport(d.name,type)?'<button class="sales-btn" onclick="openSalesReport(\''+d.name.replace(/'/g,"")+'\',\''+type+'\')">📊</button>':''}</td>
       <td><span class="position-tag">${d.pos}</span></td>
       <td class="salary-cell">${d.salary?fmt(d.salary):'—'}</td>
       <td class="${ac}">${fmt(d.draft)}</td>
